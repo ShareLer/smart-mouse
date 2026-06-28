@@ -18,7 +18,11 @@ final class SettingsStore {
             decoded = settings
         }
 
-        if let keychainKey = KeychainManager.load() {
+        // Prefer Keychain, but only if UserDefaults doesn't have a newer backup
+        // (a non‑empty backup means the last Keychain write failed — don't overwrite it)
+        if let keychainKey = KeychainManager.load(),
+           decoded?.model.apiKey.isEmpty != false
+        {
             if var settings = decoded {
                 settings.model.apiKey = keychainKey
                 decoded = settings

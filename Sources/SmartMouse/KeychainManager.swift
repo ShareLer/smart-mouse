@@ -8,18 +8,22 @@ enum KeychainManager {
     static func save(apiKey: String) -> Bool {
         guard let data = apiKey.data(using: .utf8) else { return false }
 
-        let deleteQuery: [CFString: Any] = [
+        let base: [CFString: Any] = [
             kSecClass: kSecClassGenericPassword,
             kSecAttrService: service,
         ]
-        SecItemDelete(deleteQuery as CFDictionary)
 
-        let addQuery: [CFString: Any] = [
-            kSecClass: kSecClassGenericPassword,
-            kSecAttrService: service,
-            kSecValueData: data,
-        ]
-        let status = SecItemAdd(addQuery as CFDictionary, nil)
+        // Try update first (if item exists)
+        let update: [CFString: Any] = [kSecValueData: data]
+        var status = SecItemUpdate(base as CFDictionary, update as CFDictionary)
+
+        if status == errSecItemNotFound {
+            // Try add (first-time)
+            var addQuery = base
+            addQuery[kSecValueData] = data
+            status = SecItemAdd(addQuery as CFDictionary, nil)
+        }
+
         return status == errSecSuccess
     }
 

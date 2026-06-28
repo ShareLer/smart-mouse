@@ -99,6 +99,13 @@ private struct ActionBarView: View {
                 }
                 .onEnded { _ in dragOffset = .zero }
         )
+        .onHover { inside in
+            if inside {
+                appController.pauseCountdown()
+            } else {
+                appController.resumeCountdown()
+            }
+        }
     }
 
     private var floatingWindow: NSWindow? {

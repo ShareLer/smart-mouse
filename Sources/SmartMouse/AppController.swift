@@ -18,6 +18,7 @@ final class AppController {
     private var hideTask: Task<Void, Never>?
     private var streamTask: Task<Void, Never>?
     private var countdownTask: Task<Void, Never>?
+    private var countdownRemaining: TimeInterval = 3.0
     private weak var settingsStore: SettingsStore?
     private var streamGeneration = UUID()
     private(set) var selectedText = ""
@@ -168,6 +169,7 @@ final class AppController {
     private func startActionBarCountdown() {
         countdownTask?.cancel()
         countdownFraction = 1.0
+        countdownRemaining = 3.0
 
         countdownTask = Task { @MainActor in
             let duration: TimeInterval = 3.0
@@ -175,7 +177,33 @@ final class AppController {
             let totalSteps = Int(duration / interval)
             for step in 0...totalSteps {
                 if Task.isCancelled { return }
-                countdownFraction = 1.0 - TimeInterval(step) / TimeInterval(totalSteps)
+                let elapsed = TimeInterval(step) * interval
+                countdownFraction = max(0, 1.0 - elapsed / duration)
+                countdownRemaining = duration - elapsed
+                try? await Task.sleep(for: .seconds(interval))
+            }
+            if mode == .actionBar {
+                hide()
+            }
+        }
+    }
+
+    func pauseCountdown() {
+        countdownTask?.cancel()
+    }
+
+    func resumeCountdown() {
+        guard mode == .actionBar else { return }
+        countdownTask?.cancel()
+        let remaining = countdownRemaining
+        let interval: TimeInterval = 1.0 / 30.0
+
+        countdownTask = Task { @MainActor in
+            for step in 0... {
+                if Task.isCancelled { return }
+                let elapsed = TimeInterval(step) * interval
+                if elapsed >= remaining { break }
+                countdownFraction = max(0, 1.0 - (elapsed + (3.0 - remaining)) / 3.0)
                 try? await Task.sleep(for: .seconds(interval))
             }
             if mode == .actionBar {
