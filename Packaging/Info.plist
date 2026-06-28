@@ -22,5 +22,7 @@
     <string>14.0</string>
     <key>NSHumanReadableCopyright</key>
     <string>Copyright © 2026</string>
+    <key>LSUIElement</key>
+    <true/>
 </dict>
 </plist>
