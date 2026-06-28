@@ -97,23 +97,14 @@ private struct PermissionsCard: View {
                     .foregroundStyle(.secondary)
             }
 
-            Text("用于监听全局鼠标事件并读取其他 App 中的选中文本。")
+            Text("用于监听全局鼠标事件并读取其他 App 中的选中文本。\n开启方法：打开系统设置 → 隐私与安全性 → 辅助功能 → 找到 Smart Mouse → 打开开关。如已开启但未生效，关闭后重新打开或重启本应用。")
                 .font(.caption).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
-
-            if !accessibilityTrusted {
-                VStack(alignment: .leading, spacing: 4) {
-                    Label("系统设置 → 隐私与安全性 → 辅助功能 → 找到 Smart Mouse → 开启", systemImage: "info.circle")
-                        .font(.caption).foregroundStyle(.secondary)
-                }
-                .padding(10)
-                .background(Color.orange.opacity(0.06), in: .rect(cornerRadius: 8))
-            }
 
             HStack(spacing: 8) {
                 Button("刷新状态") { accessibilityTrusted = PermissionManager.isAccessibilityTrusted }
                     .controlSize(.small)
-                Button("打开系统设置") { PermissionManager.openPrivacySettings() }
+                Button("打开辅助功能设置") { PermissionManager.openPrivacySettings() }
                     .controlSize(.small)
             }
         }

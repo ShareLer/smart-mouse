@@ -9,9 +9,6 @@ struct SmartMouseApp: App {
             Button("设置") {
                 services.appController.openSettings()
             }
-            Button("打开辅助功能设置") {
-                PermissionManager.openPrivacySettings()
-            }
             Divider()
             Button("退出") {
                 services.appController.stop()
