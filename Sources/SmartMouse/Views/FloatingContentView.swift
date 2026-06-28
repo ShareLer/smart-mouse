@@ -15,7 +15,7 @@ struct FloatingContentView: View {
                 ConversationPanelView()
             }
         }
-        .background(.ultraThinMaterial, in: .rect(cornerRadius: 14, style: .continuous))
+        .background(.white, in: .rect(cornerRadius: 14, style: .continuous))
         .shadow(color: .black.opacity(0.10), radius: 10, y: 3)
     }
 }
@@ -29,7 +29,7 @@ private struct ActionBarView: View {
         VStack(spacing: 0) {
             GeometryReader { geo in
                 Rectangle()
-                    .fill(.primary.opacity(0.12))
+                    .fill(.black.opacity(0.10))
                     .frame(width: geo.size.width * appController.countdownFraction)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .animation(.linear(duration: 0.05), value: appController.countdownFraction)
@@ -44,10 +44,10 @@ private struct ActionBarView: View {
                         HStack(spacing: 4) {
                             Image(systemName: action.symbolName)
                                 .font(.system(size: 12.5, weight: .semibold))
-                                .foregroundStyle(.primary)
+                                .foregroundColor(.black)
                             Text(action.title)
                                 .font(.system(size: 12, weight: .medium))
-                                .foregroundStyle(.primary)
+                                .foregroundColor(.black)
                                 .lineLimit(1)
                         }
                         .padding(.horizontal, 9)
@@ -56,14 +56,14 @@ private struct ActionBarView: View {
                     }
                     .buttonStyle(.borderless)
                     .fixedSize(horizontal: true, vertical: false)
-                    .background(.primary.opacity(0.07), in: .rect(cornerRadius: 7, style: .continuous))
+                    .background(.black.opacity(0.06), in: .rect(cornerRadius: 7, style: .continuous))
                     .accessibilityLabel(action.title)
                 }
 
                 Spacer(minLength: 0)
 
                 Rectangle()
-                    .fill(.secondary.opacity(0.20))
+                    .fill(.black.opacity(0.08))
                     .frame(width: 1, height: 20)
                     .padding(.horizontal, 3)
 
@@ -72,12 +72,12 @@ private struct ActionBarView: View {
                 } label: {
                     Image(systemName: "ellipsis")
                         .font(.system(size: 15, weight: .medium))
-                        .foregroundStyle(.primary)
+                        .foregroundColor(.black)
                         .frame(width: 26, height: 26)
                         .contentShape(.circle)
                 }
                 .buttonStyle(.plain)
-                .background(.primary.opacity(0.07), in: .circle)
+                .background(.black.opacity(0.06), in: .circle)
                 .accessibilityLabel("打开设置")
             }
             .padding(.horizontal, 9)
