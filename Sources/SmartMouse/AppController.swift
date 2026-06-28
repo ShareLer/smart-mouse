@@ -207,8 +207,15 @@ final class AppController {
                 .environment(self)
                 .environment(settingsStore)
         )
-        floatingWindow.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
+
+        if mode == .actionBar {
+            // Show without stealing keyboard focus — so user can still Cmd+C etc.
+            floatingWindow.orderFront(nil)
+        } else {
+            // Conversation: become key so the input bar gets keyboard input
+            floatingWindow.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+        }
     }
 
     private func mouseLocation() -> NSPoint {
