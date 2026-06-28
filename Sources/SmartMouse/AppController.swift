@@ -61,9 +61,7 @@ final class AppController {
         guard let settingsStore else { return }
         hide()
         if settingsWindowController == nil {
-            settingsWindowController = SettingsWindowController(settingsStore: settingsStore) { [weak self] in
-                self?.onSettingsClose()
-            }
+            settingsWindowController = SettingsWindowController(settingsStore: settingsStore) {}
         }
         settingsWindowController?.show()
     }
@@ -130,7 +128,7 @@ final class AppController {
             isStreaming = false
             isPinned = false
             mode = .actionBar
-            showWindow(at: mouseLocation(), width: actionBarWidth(), height: 52)
+            showWindow(at: mouseLocation(), width: actionBarWidth(), height: 38)
             startActionBarCountdown()
         }
     }
@@ -186,10 +184,6 @@ final class AppController {
         }
     }
 
-    private func onSettingsClose() {
-        NSApp.setActivationPolicy(.accessory)
-    }
-
     private func showWindow(at point: NSPoint, width: CGFloat, height: CGFloat) {
         guard let settingsStore else { return }
 
@@ -221,18 +215,26 @@ final class AppController {
         NSEvent.mouseLocation
     }
 
+    /// Calculated from actual action count, capped at a generous max.
     private func actionBarWidth() -> CGFloat {
-        let actionCount = settingsStore?.settings.actions.count ?? 0
-        let displayedCount = min(actionCount, 5)
-        let overflow = actionCount > 5
-        return CGFloat(86 * displayedCount + 54 + (overflow ? 28 : 0))
+        let actions = settingsStore?.settings.actions ?? []
+        // 18px padding + 16px icon + 4px gap + ~13px per Chinese char at 12pt
+        let buttonWidth = { (title: String) -> CGFloat in
+            CGFloat(18 + 16 + 4 + title.count * 13)
+        }
+        let totalButtons = actions.map { buttonWidth($0.title) }.reduce(0, +)
+        let gaps = CGFloat(max(0, actions.count - 1)) * 3 // 3px spacing
+        let settingsArea: CGFloat = 42
+        let hPadding: CGFloat = 18
+        let natural = totalButtons + gaps + settingsArea + hPadding
+        return min(max(natural, 100), 800)
     }
 }
 
 final class FloatingPanel: NSPanel {
     init() {
         super.init(
-            contentRect: NSRect(x: 0, y: 0, width: 388, height: 52),
+            contentRect: NSRect(x: 0, y: 0, width: 388, height: 38),
             styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
             defer: false

@@ -9,10 +9,7 @@ struct SmartMouseApp: App {
             Button("设置") {
                 services.appController.openSettings()
             }
-            Button("请求辅助功能权限") {
-                PermissionManager.requestAccessibilityPermission()
-            }
-            Button("打开系统辅助功能设置") {
+            Button("打开辅助功能设置") {
                 PermissionManager.openPrivacySettings()
             }
             Divider()

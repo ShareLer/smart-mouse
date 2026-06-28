@@ -28,60 +28,64 @@ private struct ActionBarView: View {
     @Environment(AppController.self) private var appController
     @Environment(SettingsStore.self) private var settingsStore
     @State private var dragOffset = CGSize.zero
-    private let maxVisible = 5
 
     var body: some View {
         VStack(spacing: 0) {
-            Rectangle()
-                .fill(Color.accentColor.opacity(0.45))
-                .frame(maxWidth: .infinity)
-                .frame(height: 2 * appController.countdownFraction)
-                .animation(.linear(duration: 0.05), value: appController.countdownFraction)
-                .frame(height: 2, alignment: .top)
+            GeometryReader { geo in
+                Rectangle()
+                    .fill(.primary.opacity(0.12))
+                    .frame(width: geo.size.width * appController.countdownFraction)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .animation(.linear(duration: 0.05), value: appController.countdownFraction)
+            }
+            .frame(height: 2)
 
-            HStack(spacing: 4) {
-                ForEach(visibleActions) { action in
+            HStack(spacing: 3) {
+                ForEach(settingsStore.settings.actions) { action in
                     Button {
                         appController.run(action: action, settings: settingsStore.settings)
                     } label: {
-                        HStack(spacing: 5) {
+                        HStack(spacing: 4) {
                             Image(systemName: action.symbolName)
-                                .font(.system(size: 13, weight: .medium))
+                                .font(.system(size: 12.5, weight: .semibold))
+                                .foregroundStyle(.primary.opacity(0.7))
                             Text(action.title)
                                 .font(.system(size: 12, weight: .medium))
+                                .foregroundStyle(.primary.opacity(0.85))
                                 .lineLimit(1)
                         }
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 7)
-                        .frame(minWidth: 60)
+                        .padding(.horizontal, 9)
+                        .padding(.vertical, 5)
                     }
                     .buttonStyle(.plain)
-                    .background(.primary.opacity(0.09), in: .rect(cornerRadius: 8, style: .continuous))
+                    .fixedSize(horizontal: true, vertical: false)
+                    .background(.primary.opacity(0.07), in: .rect(cornerRadius: 7, style: .continuous))
+                    .contentShape(.rect)
                     .accessibilityLabel(action.title)
                 }
 
-                if hiddenCount > 0 {
-                    Text("+\(hiddenCount)")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, 6)
-                }
-
                 Spacer(minLength: 0)
+
+                Rectangle()
+                    .fill(.primary.opacity(0.10))
+                    .frame(width: 1, height: 20)
+                    .padding(.horizontal, 3)
 
                 Button {
                     appController.openSettings()
                 } label: {
                     Image(systemName: "ellipsis")
                         .font(.system(size: 15, weight: .medium))
-                        .frame(width: 28, height: 28)
+                        .foregroundStyle(.primary.opacity(0.55))
+                        .frame(width: 26, height: 26)
+                        .contentShape(.circle)
                 }
                 .buttonStyle(.plain)
-                .background(.primary.opacity(0.09), in: .circle)
+                .background(.primary.opacity(0.07), in: .circle)
                 .accessibilityLabel("打开设置")
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 9)
+            .padding(.horizontal, 9)
+            .padding(.vertical, 5)
         }
         .gesture(
             DragGesture(minimumDistance: 4)
@@ -103,14 +107,6 @@ private struct ActionBarView: View {
 
     private var floatingWindow: NSWindow? {
         NSApplication.shared.windows.first { $0 is FloatingPanel }
-    }
-
-    private var visibleActions: [SmartAction] {
-        Array(settingsStore.settings.actions.prefix(maxVisible))
-    }
-
-    private var hiddenCount: Int {
-        max(0, settingsStore.settings.actions.count - maxVisible)
     }
 }
 
@@ -229,6 +225,7 @@ private struct ConversationHeader: View {
                 Image(systemName: appController.isPinned ? "pin.fill" : "pin")
                     .font(.system(size: 12))
                     .frame(width: 24, height: 24)
+                    .contentShape(.circle)
             }
             .buttonStyle(.plain)
             .foregroundStyle(appController.isPinned ? Color.orange : .secondary)
@@ -241,6 +238,7 @@ private struct ConversationHeader: View {
                 Image(systemName: "xmark")
                     .font(.system(size: 12, weight: .medium))
                     .frame(width: 24, height: 24)
+                    .contentShape(.circle)
             }
             .buttonStyle(.plain)
             .foregroundStyle(.secondary)

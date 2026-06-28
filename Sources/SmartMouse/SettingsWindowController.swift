@@ -18,8 +18,8 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         window.isReleasedWhenClosed = false
         window.level = .normal
         window.backgroundColor = .white
-        window.setContentSize(NSSize(width: 600, height: 640))
-        window.minSize = NSSize(width: 560, height: 500)
+        window.setContentSize(NSSize(width: 460, height: 580))
+        window.minSize = NSSize(width: 420, height: 460)
         window.center()
 
         super.init(window: window)
@@ -33,11 +33,10 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
 
     func show() {
         guard let window else { return }
-        NSApp.setActivationPolicy(.regular)
+        // Never switch to .regular — keep menu-bar-only mode
         NSApp.activate(ignoringOtherApps: true)
         window.makeKeyAndOrderFront(nil)
         window.makeMain()
-        window.orderFrontRegardless()
     }
 
     func windowWillClose(_ notification: Notification) {

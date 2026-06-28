@@ -17,13 +17,12 @@ mkdir -p "$MACOS_DIR" "$RESOURCES_DIR"
 cp "$BUILD_DIR/SmartMouse" "$MACOS_DIR/Smart Mouse"
 cp "$ROOT_DIR/Packaging/Info.plist" "$CONTENTS_DIR/Info.plist"
 
-# Sign with persistent self-signed identity (stable across rebuilds)
-# This keeps TCC permissions valid — authorize once and it sticks.
+# ── App Icon ──
+swift "$ROOT_DIR/Scripts/gen-icon.swift" "$RESOURCES_DIR" 2>/dev/null || true
+
+# ── Sign ──
 security unlock-keychain -p "" "$HOME/Library/Keychains/smartmouse-build.keychain-db" 2>/dev/null || true
-codesign --force --deep --sign "$SIGNING_IDENTITY" "$APP_DIR" 2>/dev/null || {
-  echo "签名失败，请先运行: security unlock-keychain ..."
-  # Fallback: just keep linker signature
-}
+codesign --force --deep --sign "$SIGNING_IDENTITY" "$APP_DIR" 2>/dev/null || true
 
 cat > "$RESOURCES_DIR/README.txt" <<'EOF'
 Smart Mouse

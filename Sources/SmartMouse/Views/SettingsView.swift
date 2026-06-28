@@ -25,7 +25,7 @@ struct SettingsView: View {
                 ActionsTab()
             }
         }
-        .frame(minWidth: 560, minHeight: 520)
+        .frame(minWidth: 420, minHeight: 460)
         .background(Color(nsColor: .textBackgroundColor))
         .onAppear { accessibilityTrusted = PermissionManager.isAccessibilityTrusted }
     }
@@ -76,8 +76,8 @@ private struct PermissionsCard: View {
                 }
 
                 HStack {
-                    Button("请求权限") { PermissionManager.requestAccessibilityPermission() }.controlSize(.small)
-                    Button("打开系统设置") { PermissionManager.openPrivacySettings() }.controlSize(.small)
+                    Button("打开辅助功能设置") { PermissionManager.openPrivacySettings() }
+                        .controlSize(.small)
                 }
             }
         }
@@ -297,36 +297,37 @@ private struct ActionEditorBody: View {
     @Binding var promptTemplate: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            FieldRow("名称") {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline, spacing: 10) {
+                Text("名称").font(.callout).foregroundStyle(.secondary).frame(width: 36, alignment: .leading)
                 TextField("操作名称", text: $title).textFieldStyle(.roundedBorder)
             }
-            FieldRow("图标") {
+            HStack(alignment: .firstTextBaseline, spacing: 10) {
+                Text("图标").font(.callout).foregroundStyle(.secondary).frame(width: 36, alignment: .leading)
                 HStack(spacing: 6) {
                     Image(systemName: symbolName).frame(width: 20).foregroundStyle(.secondary)
                     TextField("SF Symbol", text: $symbolName).textFieldStyle(.roundedBorder)
                 }
             }
-            FieldRow("Prompt") {
-                VStack(alignment: .leading, spacing: 6) {
+
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
                     Text(SmartAction.selectedTextPlaceholder)
                         .font(.caption2.monospaced()).foregroundStyle(.secondary)
                         .padding(.horizontal, 6).padding(.vertical, 2)
                         .background(Color.primary.opacity(0.06), in: .rect(cornerRadius: 4))
-
-                    TextEditor(text: $promptTemplate)
-                        .font(.system(.body, design: .monospaced))
-                        .scrollContentBackground(.hidden)
-                        .padding(8)
-                        .frame(minHeight: 110)
-                        .background(Color.primary.opacity(0.04), in: .rect(cornerRadius: 8))
                 }
+                TextEditor(text: $promptTemplate)
+                    .font(.system(.body, design: .monospaced))
+                    .scrollContentBackground(.hidden)
+                    .padding(8)
+                    .frame(minHeight: 110)
+                    .background(Color.primary.opacity(0.04), in: .rect(cornerRadius: 8))
             }
 
             if !promptTemplate.contains(SmartAction.selectedTextPlaceholder) {
                 Text("提示：未包含占位符，选中文本将追加到末尾。")
                     .font(.callout).foregroundStyle(.secondary)
-                    .padding(.leading, 76)
             }
         }
     }
@@ -340,30 +341,30 @@ private struct NewActionEditor: View {
     @Binding var promptTemplate: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            FieldRow("名称") {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline, spacing: 10) {
+                Text("名称").font(.callout).foregroundStyle(.secondary).frame(width: 36, alignment: .leading)
                 TextField("操作名称", text: $title).textFieldStyle(.roundedBorder)
             }
-            FieldRow("图标") {
+            HStack(alignment: .firstTextBaseline, spacing: 10) {
+                Text("图标").font(.callout).foregroundStyle(.secondary).frame(width: 36, alignment: .leading)
                 HStack(spacing: 6) {
                     Image(systemName: symbolName).frame(width: 20).foregroundStyle(.secondary)
                     TextField("SF Symbol", text: $symbolName).textFieldStyle(.roundedBorder)
                 }
             }
-            FieldRow("Prompt") {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(SmartAction.selectedTextPlaceholder)
-                        .font(.caption2.monospaced()).foregroundStyle(.secondary)
-                        .padding(.horizontal, 6).padding(.vertical, 2)
-                        .background(Color.primary.opacity(0.06), in: .rect(cornerRadius: 4))
 
-                    TextEditor(text: $promptTemplate)
-                        .font(.system(.body, design: .monospaced))
-                        .scrollContentBackground(.hidden)
-                        .padding(8)
-                        .frame(minHeight: 110)
-                        .background(Color.primary.opacity(0.04), in: .rect(cornerRadius: 8))
-                }
+            VStack(alignment: .leading, spacing: 6) {
+                Text(SmartAction.selectedTextPlaceholder)
+                    .font(.caption2.monospaced()).foregroundStyle(.secondary)
+                    .padding(.horizontal, 6).padding(.vertical, 2)
+                    .background(Color.primary.opacity(0.06), in: .rect(cornerRadius: 4))
+                TextEditor(text: $promptTemplate)
+                    .font(.system(.body, design: .monospaced))
+                    .scrollContentBackground(.hidden)
+                    .padding(8)
+                    .frame(minHeight: 110)
+                    .background(Color.primary.opacity(0.04), in: .rect(cornerRadius: 8))
             }
         }
     }

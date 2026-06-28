@@ -1,3 +1,32 @@
+# Swift build artifacts
 .build/
+
+# App bundle output
 dist/
+
+# macOS
 .DS_Store
+
+# Xcode
+*.xcodeproj
+*.xcworkspace
+DerivedData/
+
+# Keychain / signing
+*.keychain
+*.keychain-db
+smartmouse-build.keychain*
+*.p12
+*.pem
+
+# IDE
+.vscode/
+.idea/
+
+# Logs & diagnostics
+*.ips
+*.diag
+*.crash
+
+# Temp files
+/tmp/
