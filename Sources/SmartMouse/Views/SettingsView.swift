@@ -1,6 +1,8 @@
 import SwiftUI
 import ServiceManagement
 
+// MARK: - Settings View
+
 struct SettingsView: View {
     @Environment(SettingsStore.self) private var settingsStore
     @State private var accessibilityTrusted = PermissionManager.isAccessibilityTrusted
@@ -210,6 +212,8 @@ private struct ModelCard: View {
     }
 }
 
+// MARK: - Actions Tab
+
 private struct ActionsTab: View {
     @Environment(SettingsStore.self) private var settingsStore
     @State private var expandedIDs = Set<SmartAction.ID>()
@@ -217,146 +221,240 @@ private struct ActionsTab: View {
     var body: some View {
         @Bindable var store = settingsStore
 
-        List {
-            ForEach($store.settings.actions, id: \.id) { $action in
-                VStack(spacing: 0) {
-                    // Header row
-                    HStack(spacing: 8) {
-                        Image(systemName: action.symbolName)
-                            .foregroundStyle(.blue).frame(width: 20)
-                        Text(action.title)
-                            .font(.system(size: 13, weight: .medium))
-                            .lineLimit(1)
-
-                        if action.isBuiltIn { Badge("内置", color: .secondary) }
-                        if action.isNew { Badge("未保存", color: .orange) }
-
-                        Spacer()
-
-                        Button {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(Array(zip(store.settings.actions.indices, store.settings.actions)),
+                        id: \.1.id) { index, action in
+                    ActionCard(
+                        action: $store.settings.actions[index],
+                        isExpanded: expandedIDs.contains(action.id),
+                        canMoveUp: index > 0,
+                        canMoveDown: index < store.settings.actions.count - 1,
+                        onToggle: {
                             withAnimation(.easeInOut(duration: 0.15)) {
                                 if expandedIDs.contains(action.id) { expandedIDs.remove(action.id) }
                                 else { expandedIDs.insert(action.id) }
                             }
-                        } label: {
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 11, weight: .bold))
-                                .foregroundStyle(.secondary)
-                                .rotationEffect(.degrees(expandedIDs.contains(action.id) ? 90 : 0))
-                                .frame(width: 22, height: 22)
-                        }
-                        .buttonStyle(.plain)
-                        .background(.primary.opacity(0.06), in: .circle)
-                    }
-                    .padding(.vertical, 2)
-                    .contentShape(.rect)
-                    .onTapGesture {
-                        withAnimation(.easeInOut(duration: 0.15)) {
-                            if expandedIDs.contains(action.id) { expandedIDs.remove(action.id) }
-                            else { expandedIDs.insert(action.id) }
-                        }
-                    }
-                    .moveDisabled(true)  // only the row itself can be dragged, not this header
-
-                    // Expanded editor
-                    if expandedIDs.contains(action.id) {
-                        VStack(alignment: .leading, spacing: 12) {
-                            Divider()
-
-                            if action.isNew {
-                                Text(SmartAction.selectedTextPlaceholder)
-                                    .font(.caption2.monospaced()).foregroundStyle(.secondary)
-                                    .padding(.horizontal, 6).padding(.vertical, 2)
-                                    .background(.primary.opacity(0.06), in: .rect(cornerRadius: 4))
-                                TextEditor(text: $action.promptTemplate)
-                                    .font(.system(.body, design: .monospaced))
-                                    .scrollContentBackground(.hidden)
-                                    .padding(8)
-                                    .frame(minHeight: 80)
-                                    .background(.primary.opacity(0.04), in: .rect(cornerRadius: 8))
-                                HStack(spacing: 10) {
-                                    Spacer()
-                                    Button(role: .cancel) {
-                                        expandedIDs.remove(action.id)
-                                        settingsStore.cancelNewAction(action)
-                                    } label: { Text("取消").frame(width: 50) }
-                                        .buttonStyle(.bordered).controlSize(.small)
-                                    Button {
-                                        settingsStore.saveNewAction(action)
-                                        expandedIDs.remove(action.id)
-                                    } label: { Text("保存").frame(width: 50) }
-                                        .buttonStyle(.borderedProminent).controlSize(.small)
-                                        .disabled(action.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                                }
-                            } else {
-                                HStack(spacing: 10) {
-                                    Text("名称").font(.caption).foregroundStyle(.secondary).frame(width: 32, alignment: .leading)
-                                    TextField("操作名称", text: $action.title).textFieldStyle(.roundedBorder)
-                                }
-                                HStack(spacing: 10) {
-                                    Text("图标").font(.caption).foregroundStyle(.secondary).frame(width: 32, alignment: .leading)
-                                    HStack(spacing: 4) {
-                                        Image(systemName: action.symbolName).frame(width: 18).foregroundStyle(.secondary)
-                                        TextField("SF Symbol", text: $action.symbolName).textFieldStyle(.roundedBorder)
-                                    }
-                                }
-
-                                Text(SmartAction.selectedTextPlaceholder)
-                                    .font(.caption2.monospaced()).foregroundStyle(.secondary)
-                                    .padding(.horizontal, 6).padding(.vertical, 2)
-                                    .background(.primary.opacity(0.06), in: .rect(cornerRadius: 4))
-                                TextEditor(text: $action.promptTemplate)
-                                    .font(.system(.body, design: .monospaced))
-                                    .scrollContentBackground(.hidden)
-                                    .padding(8)
-                                    .frame(minHeight: 80)
-                                    .background(.primary.opacity(0.04), in: .rect(cornerRadius: 8))
-
-                                if !action.promptTemplate.contains(SmartAction.selectedTextPlaceholder) {
-                                    Text("提示：未包含占位符，选中文本将追加到末尾。")
-                                        .font(.caption).foregroundStyle(.secondary)
-                                }
-
-                                if !action.isBuiltIn {
-                                    HStack {
-                                        Spacer()
-                                        Button(role: .destructive) {
-                                            expandedIDs.remove(action.id)
-                                            settingsStore.deleteAction(action)
-                                        } label: { Label("删除", systemImage: "trash") }
-                                            .buttonStyle(.bordered).tint(.red).controlSize(.small)
-                                    }
-                                }
+                        },
+                        onMoveUp: {
+                            withAnimation(.easeInOut(duration: 0.15)) {
+                                store.settings.actions.swapAt(index, index - 1)
+                            }
+                        },
+                        onMoveDown: {
+                            withAnimation(.easeInOut(duration: 0.15)) {
+                                store.settings.actions.swapAt(index, index + 1)
                             }
                         }
-                        .moveDisabled(true)
-                        .padding(.vertical, 8)
-                    }
+                    )
                 }
-            }
-            .onMove { from, to in
-                store.settings.actions.move(fromOffsets: from, toOffset: to)
-            }
-            .onDelete { offsets in
-                store.deleteActions(at: offsets)
-            }
-        }
-        .listStyle(.sidebar)
-        .scrollContentBackground(.hidden)
-        .background(Color.white)
-        .safeAreaInset(edge: .bottom) {
-            HStack {
+
                 Button {
                     let newAction = store.addNewAction()
                     expandedIDs.insert(newAction.id)
                 } label: {
                     Label("添加操作", systemImage: "plus")
+                        .frame(maxWidth: .infinity)
                 }
-                Spacer()
+                .buttonStyle(.bordered)
+                .padding(.top, 8)
             }
+            .padding(16)
+        }
+    }
+}
+
+// MARK: - Action Card
+
+private struct ActionCard: View {
+    @Environment(SettingsStore.self) private var settingsStore
+    @Binding var action: SmartAction
+    let isExpanded: Bool
+    let canMoveUp: Bool
+    let canMoveDown: Bool
+    let onToggle: () -> Void
+    let onMoveUp: () -> Void
+    let onMoveDown: () -> Void
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // Header
+            HStack(spacing: 8) {
+                Image(systemName: action.symbolName)
+                    .foregroundStyle(.blue).frame(width: 20)
+                Text(action.title)
+                    .font(.system(size: 13, weight: .medium))
+                    .lineLimit(1)
+
+                if action.isBuiltIn { Badge("内置", color: .secondary) }
+                if action.isNew { Badge("未保存", color: .orange) }
+
+                Spacer()
+
+                Button { if canMoveUp { onMoveUp() } } label: {
+                    Image(systemName: "chevron.up")
+                        .font(.system(size: 10, weight: .bold))
+                        .frame(width: 22, height: 22)
+                }
+                .buttonStyle(.plain)
+                .opacity(canMoveUp ? 0.45 : 0.15)
+
+                Button { if canMoveDown { onMoveDown() } } label: {
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 10, weight: .bold))
+                        .frame(width: 22, height: 22)
+                }
+                .buttonStyle(.plain)
+                .opacity(canMoveDown ? 0.45 : 0.15)
+
+                Button(action: onToggle) {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(.secondary)
+                        .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                        .frame(width: 22, height: 22)
+                }
+                .buttonStyle(.plain)
+                .background(.primary.opacity(0.06), in: .circle)
+            }
+            .contentShape(.rect)
+            .onTapGesture { onToggle() }
             .padding(.horizontal, 16)
-            .padding(.vertical, 10)
-            .background(.regularMaterial)
+            .padding(.vertical, 12)
+
+            // Expanded
+            if isExpanded {
+                Divider()
+
+                VStack(alignment: .leading, spacing: 12) {
+                    if action.isNew {
+                        NewActionEditor(
+                            title: $action.title,
+                            symbolName: $action.symbolName,
+                            promptTemplate: $action.promptTemplate
+                        )
+                        HStack(spacing: 10) {
+                            Spacer()
+                            Button(role: .cancel) {
+                                onToggle()
+                                settingsStore.cancelNewAction(action)
+                            } label: { Text("取消").frame(width: 50) }
+                                .buttonStyle(.bordered).controlSize(.small)
+                            Button {
+                                settingsStore.saveNewAction(action)
+                                onToggle()
+                            } label: { Text("保存").frame(width: 50) }
+                                .buttonStyle(.borderedProminent).controlSize(.small)
+                                .disabled(action.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .trailing)
+                    } else {
+                        ActionEditorBody(
+                            title: $action.title,
+                            symbolName: $action.symbolName,
+                            promptTemplate: $action.promptTemplate
+                        )
+                        if !action.isBuiltIn {
+                            HStack {
+                                Spacer()
+                                Button(role: .destructive) {
+                                    onToggle()
+                                    settingsStore.deleteAction(action)
+                                } label: { Label("删除", systemImage: "trash") }
+                                    .buttonStyle(.bordered).tint(.red).controlSize(.small)
+                            }
+                        }
+                    }
+                }
+                .padding(16)
+                .background(Color(nsColor: .controlBackgroundColor),
+                            in: .rect(cornerRadius: 10, style: .continuous))
+                .padding(12)
+            }
+        }
+        .background(.white, in: .rect(cornerRadius: 10, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .stroke(.black.opacity(0.05), lineWidth: 1)
+        }
+    }
+}
+
+// MARK: - Action Editor Body
+
+private struct ActionEditorBody: View {
+    @Binding var title: String
+    @Binding var symbolName: String
+    @Binding var promptTemplate: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 10) {
+                Text("名称").font(.caption).foregroundStyle(.secondary).frame(width: 32, alignment: .leading)
+                TextField("操作名称", text: $title).textFieldStyle(.roundedBorder)
+            }
+            HStack(spacing: 10) {
+                Text("图标").font(.caption).foregroundStyle(.secondary).frame(width: 32, alignment: .leading)
+                HStack(spacing: 4) {
+                    Image(systemName: symbolName).frame(width: 18).foregroundStyle(.secondary)
+                    TextField("SF Symbol", text: $symbolName).textFieldStyle(.roundedBorder)
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text(SmartAction.selectedTextPlaceholder)
+                    .font(.caption2.monospaced()).foregroundStyle(.secondary)
+                    .padding(.horizontal, 6).padding(.vertical, 2)
+                    .background(.primary.opacity(0.06), in: .rect(cornerRadius: 4))
+                TextEditor(text: $promptTemplate)
+                    .font(.system(.body, design: .monospaced))
+                    .scrollContentBackground(.hidden)
+                    .padding(8)
+                    .frame(minHeight: 100)
+                    .background(.primary.opacity(0.04), in: .rect(cornerRadius: 8))
+            }
+
+            if !promptTemplate.contains(SmartAction.selectedTextPlaceholder) {
+                Text("提示：未包含占位符，选中文本将追加到末尾。")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+        }
+    }
+}
+
+// MARK: - New Action Editor
+
+private struct NewActionEditor: View {
+    @Binding var title: String
+    @Binding var symbolName: String
+    @Binding var promptTemplate: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 10) {
+                Text("名称").font(.caption).foregroundStyle(.secondary).frame(width: 32, alignment: .leading)
+                TextField("操作名称", text: $title).textFieldStyle(.roundedBorder)
+            }
+            HStack(spacing: 10) {
+                Text("图标").font(.caption).foregroundStyle(.secondary).frame(width: 32, alignment: .leading)
+                HStack(spacing: 4) {
+                    Image(systemName: symbolName).frame(width: 18).foregroundStyle(.secondary)
+                    TextField("SF Symbol", text: $symbolName).textFieldStyle(.roundedBorder)
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text(SmartAction.selectedTextPlaceholder)
+                    .font(.caption2.monospaced()).foregroundStyle(.secondary)
+                    .padding(.horizontal, 6).padding(.vertical, 2)
+                    .background(.primary.opacity(0.06), in: .rect(cornerRadius: 4))
+                TextEditor(text: $promptTemplate)
+                    .font(.system(.body, design: .monospaced))
+                    .scrollContentBackground(.hidden)
+                    .padding(8)
+                    .frame(minHeight: 100)
+                    .background(.primary.opacity(0.04), in: .rect(cornerRadius: 8))
+            }
         }
     }
 }
