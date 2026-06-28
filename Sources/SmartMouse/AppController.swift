@@ -172,17 +172,15 @@ final class AppController {
         countdownRemaining = 3.0
 
         countdownTask = Task { @MainActor in
-            let duration: TimeInterval = 3.0
-            let interval: TimeInterval = 1.0 / 30.0
-            let totalSteps = Int(duration / interval)
-            for step in 0...totalSteps {
-                if Task.isCancelled { return }
-                let elapsed = TimeInterval(step) * interval
-                countdownFraction = max(0, 1.0 - elapsed / duration)
-                countdownRemaining = duration - elapsed
-                try? await Task.sleep(for: .seconds(interval))
+            let start = Date()
+            while !Task.isCancelled {
+                let elapsed = Date().timeIntervalSince(start)
+                countdownFraction = max(0, 1.0 - elapsed / 3.0)
+                countdownRemaining = max(0, 3.0 - elapsed)
+                if elapsed >= 3.0 { break }
+                try? await Task.sleep(for: .milliseconds(33))
             }
-            if mode == .actionBar {
+            if mode == .actionBar, !Task.isCancelled {
                 hide()
             }
         }
@@ -193,20 +191,21 @@ final class AppController {
     }
 
     func resumeCountdown() {
-        guard mode == .actionBar else { return }
+        guard mode == .actionBar, countdownRemaining > 0 else { return }
         countdownTask?.cancel()
+        let startFraction = countdownFraction
         let remaining = countdownRemaining
-        let interval: TimeInterval = 1.0 / 30.0
 
         countdownTask = Task { @MainActor in
-            for step in 0... {
-                if Task.isCancelled { return }
-                let elapsed = TimeInterval(step) * interval
+            let start = Date()
+            while !Task.isCancelled {
+                let elapsed = Date().timeIntervalSince(start)
+                countdownFraction = max(0, startFraction * (1.0 - min(elapsed / remaining, 1.0)))
+                countdownRemaining = max(0, remaining - elapsed)
                 if elapsed >= remaining { break }
-                countdownFraction = max(0, 1.0 - (elapsed + (3.0 - remaining)) / 3.0)
-                try? await Task.sleep(for: .seconds(interval))
+                try? await Task.sleep(for: .milliseconds(33))
             }
-            if mode == .actionBar {
+            if mode == .actionBar, !Task.isCancelled {
                 hide()
             }
         }
