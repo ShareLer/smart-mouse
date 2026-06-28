@@ -15,12 +15,8 @@ struct FloatingContentView: View {
                 ConversationPanelView()
             }
         }
-        .background(.regularMaterial, in: .rect(cornerRadius: 14, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(.primary.opacity(0.08), lineWidth: 1)
-        }
-        .shadow(color: .black.opacity(0.12), radius: 12, y: 4)
+        .background(.ultraThinMaterial, in: .rect(cornerRadius: 14, style: .continuous))
+        .shadow(color: .black.opacity(0.10), radius: 10, y: 3)
     }
 }
 
@@ -48,10 +44,10 @@ private struct ActionBarView: View {
                         HStack(spacing: 4) {
                             Image(systemName: action.symbolName)
                                 .font(.system(size: 12.5, weight: .semibold))
-                                .foregroundStyle(.primary.opacity(0.7))
+                                .foregroundStyle(.primary)
                             Text(action.title)
                                 .font(.system(size: 12, weight: .medium))
-                                .foregroundStyle(.primary.opacity(0.85))
+                                .foregroundStyle(.primary)
                                 .lineLimit(1)
                         }
                         .padding(.horizontal, 9)
@@ -67,7 +63,7 @@ private struct ActionBarView: View {
                 Spacer(minLength: 0)
 
                 Rectangle()
-                    .fill(.primary.opacity(0.10))
+                    .fill(.secondary.opacity(0.20))
                     .frame(width: 1, height: 20)
                     .padding(.horizontal, 3)
 
@@ -76,7 +72,7 @@ private struct ActionBarView: View {
                 } label: {
                     Image(systemName: "ellipsis")
                         .font(.system(size: 15, weight: .medium))
-                        .foregroundStyle(.primary.opacity(0.55))
+                        .foregroundStyle(.primary)
                         .frame(width: 26, height: 26)
                         .contentShape(.circle)
                 }
