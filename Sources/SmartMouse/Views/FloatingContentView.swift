@@ -56,11 +56,11 @@ private struct ActionBarView: View {
                         }
                         .padding(.horizontal, 9)
                         .padding(.vertical, 5)
+                        .contentShape(.rect(cornerRadius: 7, style: .continuous))
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.borderless)
                     .fixedSize(horizontal: true, vertical: false)
                     .background(.primary.opacity(0.07), in: .rect(cornerRadius: 7, style: .continuous))
-                    .contentShape(.rect)
                     .accessibilityLabel(action.title)
                 }
 
