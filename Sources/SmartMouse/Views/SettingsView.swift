@@ -37,7 +37,7 @@ struct SettingsView: View {
                             in: .rect(cornerRadius: 6, style: .continuous)
                         )
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.borderless)
                 }
             }
             .padding(.horizontal, 12)
