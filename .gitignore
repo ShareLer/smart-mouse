@@ -1,8 +1,7 @@
-# Swift build artifacts
+# Build artifacts
 .build/
-
-# App bundle output
 dist/
+docs/
 
 # macOS
 .DS_Store
