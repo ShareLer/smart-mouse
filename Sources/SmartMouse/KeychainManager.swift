@@ -4,23 +4,23 @@ import Security
 enum KeychainManager {
     private static let service = "com.smartmouse.llm"
 
-    static func save(apiKey: String) {
-        guard let data = apiKey.data(using: .utf8) else { return }
+    @discardableResult
+    static func save(apiKey: String) -> Bool {
+        guard let data = apiKey.data(using: .utf8) else { return false }
 
-        // Delete existing item first
         let deleteQuery: [CFString: Any] = [
             kSecClass: kSecClassGenericPassword,
             kSecAttrService: service,
         ]
         SecItemDelete(deleteQuery as CFDictionary)
 
-        // Add new item
         let addQuery: [CFString: Any] = [
             kSecClass: kSecClassGenericPassword,
             kSecAttrService: service,
             kSecValueData: data,
         ]
-        SecItemAdd(addQuery as CFDictionary, nil)
+        let status = SecItemAdd(addQuery as CFDictionary, nil)
+        return status == errSecSuccess
     }
 
     static func load() -> String? {
@@ -41,11 +41,12 @@ enum KeychainManager {
         return apiKey
     }
 
-    static func delete() {
+    @discardableResult
+    static func delete() -> Bool {
         let query: [CFString: Any] = [
             kSecClass: kSecClassGenericPassword,
             kSecAttrService: service,
         ]
-        SecItemDelete(query as CFDictionary)
+        return SecItemDelete(query as CFDictionary) == errSecSuccess
     }
 }

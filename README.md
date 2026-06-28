@@ -10,7 +10,7 @@ This is a native macOS implementation, not a browser extension. It can work acro
 
 - Global mouse-up listener.
 - Floating action bar after selected text is detected.
-- Built-in actions: copy, translate, explain.
+- Built-in actions: translate, explain.
 - OpenAI-compatible streaming chat completions.
 - Floating response window with streaming output and follow-up input.
 - Settings page for Accessibility guidance, endpoint/API key/model, actions, and prompt templates.

@@ -37,7 +37,7 @@ private struct ActionBarView: View {
             .frame(height: 2)
 
             HStack(spacing: 3) {
-                ForEach(settingsStore.settings.actions) { action in
+                ForEach(settingsStore.settings.actions.filter { !$0.isNew }) { action in
                     Button {
                         appController.run(action: action, settings: settingsStore.settings)
                     } label: {

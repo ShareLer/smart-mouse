@@ -75,14 +75,17 @@ final class SettingsStore {
 
     private func save() {
         let key = settings.model.apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        var keychainOK = true
+
         if key.isEmpty {
             KeychainManager.delete()
         } else {
-            KeychainManager.save(apiKey: key)
+            keychainOK = KeychainManager.save(apiKey: key)
         }
 
         var settingsForDisk = settings
-        settingsForDisk.model.apiKey = ""
+        // Clear from UserDefaults only if Keychain succeeded or key is empty
+        settingsForDisk.model.apiKey = keychainOK ? "" : key
         // Strip isNew flag and filter out unsaved drafts before persisting
         settingsForDisk.actions = settingsForDisk.actions
             .filter { !$0.isNew }

@@ -224,7 +224,7 @@ final class AppController {
 
     /// Calculated from actual action count, capped at a generous max.
     private func actionBarWidth() -> CGFloat {
-        let actions = settingsStore?.settings.actions ?? []
+        let actions = (settingsStore?.settings.actions ?? []).filter { !$0.isNew }
         // 18px padding + 16px icon + 4px gap + ~13px per Chinese char at 12pt
         let buttonWidth = { (title: String) -> CGFloat in
             CGFloat(18 + 16 + 4 + title.count * 13)
