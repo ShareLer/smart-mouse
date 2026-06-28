@@ -1,4 +1,5 @@
 import SwiftUI
+import ServiceManagement
 
 struct SettingsView: View {
     @Environment(SettingsStore.self) private var settingsStore
@@ -41,10 +42,46 @@ private struct GeneralTab: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 PermissionsCard(accessibilityTrusted: $accessibilityTrusted)
+                LaunchAtLoginCard()
                 ModelCard(model: $model)
             }
             .padding(24)
             .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+}
+
+// MARK: - Launch at Login Card
+
+private struct LaunchAtLoginCard: View {
+    @State private var isEnabled = SMAppService.mainApp.status == .enabled
+
+    var body: some View {
+        Card {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("开机启动").font(.headline)
+                    Text("登录系统时自动启动 Smart Mouse").font(.caption).foregroundStyle(.secondary)
+                }
+                Spacer()
+                Toggle("", isOn: $isEnabled)
+                    .toggleStyle(.switch)
+                    .controlSize(.small)
+                    .onChange(of: isEnabled) { _, newValue in
+                        do {
+                            if newValue {
+                                try SMAppService.mainApp.register()
+                            } else {
+                                try SMAppService.mainApp.unregister()
+                            }
+                        } catch {
+                            isEnabled = SMAppService.mainApp.status == .enabled
+                        }
+                    }
+            }
+        }
+        .onAppear {
+            isEnabled = SMAppService.mainApp.status == .enabled
         }
     }
 }
