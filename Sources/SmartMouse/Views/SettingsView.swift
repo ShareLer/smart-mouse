@@ -27,12 +27,12 @@ struct SettingsView: View {
                             Text(tab.title)
                                 .font(.system(size: 12, weight: .medium))
                         }
-                        .foregroundStyle(activeTab == i ? .primary : .secondary)
+                        .foregroundStyle(activeTab == i ? .white : .secondary)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
+                        .padding(.vertical, 8)
                         .background(
                             activeTab == i
-                                ? Color.primary.opacity(0.06)
+                                ? Color.blue
                                 : Color.clear,
                             in: .rect(cornerRadius: 6, style: .continuous)
                         )
