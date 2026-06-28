@@ -83,12 +83,10 @@ final class SettingsStore {
 
         var settingsForDisk = settings
         settingsForDisk.model.apiKey = ""
-        // Strip isNew flag before persisting
-        settingsForDisk.actions = settingsForDisk.actions.map { action in
-            var a = action
-            a.isNew = false
-            return a
-        }
+        // Strip isNew flag and filter out unsaved drafts before persisting
+        settingsForDisk.actions = settingsForDisk.actions
+            .filter { !$0.isNew }
+            .map { var a = $0; a.isNew = false; return a }
         guard let data = try? JSONEncoder().encode(settingsForDisk) else { return }
         UserDefaults.standard.set(data, forKey: storageKey)
     }

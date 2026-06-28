@@ -22,7 +22,7 @@ This is a native macOS implementation, not a browser extension. It can work acro
 swift run SmartMouse
 ```
 
-The app shows a menu bar item and a Dock icon. Open the menu bar item, then choose Settings.
+The app shows a menu bar item (no Dock icon). Open the menu bar item, then choose Settings.
 
 ## Build `.app`
 

@@ -83,14 +83,14 @@ final class SelectionReader {
         for delayMs in [120, 200, 300] {
             try? await Task.sleep(for: .milliseconds(delayMs))
             if pasteboard.changeCount != changeCountBefore,
-               let text = pasteboard.string(forType: .string)?.trimmingCharacters(in: .whitespacesAndNewlines),
-               !text.isEmpty
+               let rawText = pasteboard.string(forType: .string),
+               !rawText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             {
                 pasteboard.clearContents()
                 if let previousItems, !previousItems.isEmpty {
                     pasteboard.writeObjects(previousItems)
                 }
-                return text
+                return rawText
             }
         }
 

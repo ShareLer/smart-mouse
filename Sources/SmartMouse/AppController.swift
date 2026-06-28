@@ -175,7 +175,7 @@ final class AppController {
             let totalSteps = Int(duration / interval)
             for step in 0...totalSteps {
                 if Task.isCancelled { return }
-                countdownFraction = 1.0 - (TimeInterval(step) / duration)
+                countdownFraction = 1.0 - TimeInterval(step) / TimeInterval(totalSteps)
                 try? await Task.sleep(for: .seconds(interval))
             }
             if mode == .actionBar {

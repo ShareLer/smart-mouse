@@ -18,11 +18,18 @@ cp "$BUILD_DIR/SmartMouse" "$MACOS_DIR/Smart Mouse"
 cp "$ROOT_DIR/Packaging/Info.plist" "$CONTENTS_DIR/Info.plist"
 
 # ── App Icon ──
-swift "$ROOT_DIR/Scripts/gen-icon.swift" "$RESOURCES_DIR" 2>/dev/null || true
+swift "$ROOT_DIR/Scripts/gen-icon.swift" "$RESOURCES_DIR" 2>/dev/null || echo "⚠️  图标生成失败 (非致命)"
 
 # ── Sign ──
-security unlock-keychain -p "" "$HOME/Library/Keychains/smartmouse-build.keychain-db" 2>/dev/null || true
-codesign --force --deep --sign "$SIGNING_IDENTITY" "$APP_DIR" 2>/dev/null || true
+if security unlock-keychain -p "" "$HOME/Library/Keychains/smartmouse-build.keychain-db" 2>/dev/null; then
+  if codesign --force --deep --sign "$SIGNING_IDENTITY" "$APP_DIR" 2>/dev/null; then
+    echo "✅ 签名成功"
+  else
+    echo "⚠️  签名失败 — 辅助功能权限可能需要重新授权"
+  fi
+else
+  echo "⚠️  钥匙串解锁失败 — 签名跳过，权限可能不稳定"
+fi
 
 cat > "$RESOURCES_DIR/README.txt" <<'EOF'
 Smart Mouse
