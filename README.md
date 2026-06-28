@@ -1,64 +1,75 @@
 # Smart Mouse
 
-Smart Mouse is a macOS app with a menu bar item that watches global text selection and shows a floating Apple-style action bar after mouse release.
-
-## Scope
-
-This is a native macOS implementation, not a browser extension. It can work across apps and screens when macOS grants Accessibility permission. Some apps may not expose selected text through Accessibility; Smart Mouse then falls back to a temporary `Cmd+C` read and restores the previous clipboard.
+A native macOS menu bar app that detects global text selection and shows a floating action bar. Select text in any app, then choose an action (translate, explain, or custom) — Smart Mouse sends it to an LLM and streams the response in a floating conversation panel.
 
 ## Features
 
-- Global mouse-up listener.
-- Floating action bar after selected text is detected.
-- Built-in actions: translate, explain.
-- OpenAI-compatible streaming chat completions.
-- Floating response window with streaming output and follow-up input.
-- Settings page for Accessibility guidance, endpoint/API key/model, actions, and prompt templates.
-- Prompt placeholder: `{{selected_text}}`.
+- **Global text selection detection** — works across all apps via Accessibility API, with `Cmd+C` clipboard fallback
+- **Floating action bar** — appears after text selection, auto-dismisses after 3s (hover to pause countdown)
+- **Streaming LLM conversation** — OpenAI-compatible chat completions with Markdown rendering
+- **Pin & drag** — pin the conversation panel to prevent dismissal, drag to reposition
+- **Custom actions** — add, edit, reorder, and delete actions with custom prompts using `{{selected_text}}` placeholder
+- **Settings** — configure API endpoint, model, temperature; manage actions; toggle launch at login
+- **API key in Keychain** — stored securely in macOS Keychain, with UserDefaults fallback
+- **No Dock icon** — menu bar only (`LSUIElement`)
 
-## Run During Development
+## Requirements
 
-```bash
-swift run SmartMouse
-```
+- macOS 14.0+
+- Accessibility permission (Settings → Privacy & Security → Accessibility)
+- An OpenAI-compatible API endpoint (GPT-4, Claude via proxy, Ollama, etc.)
 
-The app shows a menu bar item (no Dock icon). Open the menu bar item, then choose Settings.
+## Quick Start
 
-## Build `.app`
+### Build & Install
 
 ```bash
 chmod +x Scripts/build-app.sh
 Scripts/build-app.sh
+cp -R "dist/Smart Mouse.app" "/Applications/"
+open "/Applications/Smart Mouse.app"
 ```
 
-The app bundle is created at:
+### Enable Accessibility Permission
 
-```text
-dist/Smart Mouse.app
-```
+1. Open System Settings → Privacy & Security → Accessibility
+2. Find Smart Mouse and enable the toggle
+3. If already enabled but not working, toggle it off and back on, then restart Smart Mouse
 
-You can launch it from Finder or with:
+### Configure LLM
+
+1. Click the menu bar icon → Settings
+2. Fill in your API endpoint, key, model, and temperature
+3. Add custom actions on the "Actions" tab if desired
+
+## Development
 
 ```bash
-open "dist/Smart Mouse.app"
+# Run from source
+swift run SmartMouse
+
+# Build release .app
+Scripts/build-app.sh
 ```
 
-If an older copy is already running, quit Smart Mouse from the menu bar first, then open the rebuilt app.
+> **Note:** Each `swift build` produces a new binary. The build script signs with a persistent self-signed certificate (`Smart Mouse Dev`) to keep the CDHash stable across rebuilds, so Accessibility permission only needs to be granted once.
 
-## Enable Native Permission
+## Architecture
 
-1. Launch Smart Mouse once.
-2. Open System Settings.
-3. Go to Privacy & Security > Accessibility.
-4. Enable Smart Mouse.
-5. If it still cannot read selection, restart Smart Mouse.
-
-## Model Endpoint
-
-The endpoint must be compatible with OpenAI chat completions streaming:
-
-```text
-POST /v1/chat/completions
 ```
-
-Smart Mouse sends `stream: true` and reads Server-Sent Events in the `data: ...` format.
+Sources/SmartMouse/
+├── SmartMouseApp.swift          # @main entry point (MenuBarExtra)
+├── AppController.swift          # Core logic: mouse events, window management, LLM streaming
+├── AppServices.swift            # Dependency container
+├── GlobalMouseMonitor.swift     # NSEvent global mouse listener with drag-distance filter
+├── SelectionReader.swift        # Read selected text via Accessibility API + Cmd+C fallback
+├── LLMClient.swift              # OpenAI-compatible SSE streaming client
+├── Models.swift                 # SmartAction, ModelConfiguration, ConversationMessage
+├── SettingsStore.swift          # @Observable settings persistence (UserDefaults + Keychain)
+├── KeychainManager.swift        # Keychain read/write with SecItemUpdate fallback
+├── PermissionManager.swift      # Accessibility permission helpers
+├── SettingsWindowController.swift
+└── Views/
+    ├── FloatingContentView.swift # Action bar + conversation panel
+    └── SettingsView.swift        # Settings window (general + actions tabs)
+```
