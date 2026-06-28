@@ -1,24 +1,52 @@
 import SwiftUI
 import ServiceManagement
 
+// MARK: - Settings View
+
 struct SettingsView: View {
     @Environment(SettingsStore.self) private var settingsStore
     @State private var accessibilityTrusted = PermissionManager.isAccessibilityTrusted
     @State private var activeTab = 0
 
+    private let tabs = [
+        (icon: "gearshape", title: "通用"),
+        (icon: "square.grid.2x2", title: "操作"),
+    ]
+
     var body: some View {
         VStack(spacing: 0) {
-            Picker("", selection: $activeTab) {
-                Text("通用").tag(0)
-                Text("操作条").tag(1)
+            // Tab bar
+            HStack(spacing: 0) {
+                ForEach(Array(tabs.enumerated()), id: \.offset) { i, tab in
+                    Button {
+                        activeTab = i
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: tab.icon)
+                                .font(.system(size: 12, weight: .medium))
+                            Text(tab.title)
+                                .font(.system(size: 12, weight: .medium))
+                        }
+                        .foregroundStyle(activeTab == i ? .primary : .secondary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                        .background(
+                            activeTab == i
+                                ? Color.primary.opacity(0.06)
+                                : Color.clear,
+                            in: .rect(cornerRadius: 6, style: .continuous)
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
             }
-            .pickerStyle(.segmented)
-            .padding(.horizontal, 20)
-            .padding(.top, 16)
-            .padding(.bottom, 12)
+            .padding(.horizontal, 12)
+            .padding(.top, 14)
+            .padding(.bottom, 6)
 
-            Divider()
+            Divider().padding(.horizontal, 12)
 
+            // Content
             if activeTab == 0 {
                 GeneralTab(accessibilityTrusted: $accessibilityTrusted,
                            model: Bindable(settingsStore).settings.model)
@@ -26,8 +54,8 @@ struct SettingsView: View {
                 ActionsTab()
             }
         }
-        .frame(minWidth: 420, minHeight: 460)
-        .background(Color(nsColor: .textBackgroundColor))
+        .frame(minWidth: 400, minHeight: 460)
+        .background(Color.white)
         .onAppear { accessibilityTrusted = PermissionManager.isAccessibilityTrusted }
     }
 }
@@ -40,115 +68,146 @@ private struct GeneralTab: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 14) {
                 PermissionsCard(accessibilityTrusted: $accessibilityTrusted)
                 LaunchAtLoginCard()
                 ModelCard(model: $model)
             }
-            .padding(24)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(16)
         }
     }
 }
 
-// MARK: - Launch at Login Card
-
-private struct LaunchAtLoginCard: View {
-    @State private var isEnabled = SMAppService.mainApp.status == .enabled
-
-    var body: some View {
-        Card {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("开机启动").font(.headline)
-                    Text("登录系统时自动启动 Smart Mouse").font(.caption).foregroundStyle(.secondary)
-                }
-                Spacer()
-                Toggle("", isOn: $isEnabled)
-                    .toggleStyle(.switch)
-                    .controlSize(.small)
-                    .onChange(of: isEnabled) { _, newValue in
-                        do {
-                            if newValue {
-                                try SMAppService.mainApp.register()
-                            } else {
-                                try SMAppService.mainApp.unregister()
-                            }
-                        } catch {
-                            isEnabled = SMAppService.mainApp.status == .enabled
-                        }
-                    }
-            }
-        }
-        .onAppear {
-            isEnabled = SMAppService.mainApp.status == .enabled
-        }
-    }
-}
+// MARK: - Permissions Card
 
 private struct PermissionsCard: View {
     @Binding var accessibilityTrusted: Bool
 
     var body: some View {
-        Card {
-            VStack(alignment: .leading, spacing: 14) {
-                CardHeader(icon: "hand.raised", title: "辅助功能权限",
-                    subtitle: "Smart Mouse 通过辅助功能 API 监听全局鼠标事件并读取选中文本。")
-
-                HStack(spacing: 8) {
-                    Circle()
-                        .fill(accessibilityTrusted ? Color.green : Color.orange)
-                        .frame(width: 8, height: 8)
-                    Text(accessibilityTrusted ? "已授权" : "未授权").font(.callout.weight(.medium))
-                    Spacer()
-                    Button("刷新") { accessibilityTrusted = PermissionManager.isAccessibilityTrusted }
-                        .controlSize(.small)
-                }
-
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("首次使用请前往系统设置授权").font(.subheadline)
-                    Text("系统设置 → 隐私与安全性 → 辅助功能 → 找到 Smart Mouse → 开启开关。如已开启但未生效，关闭后重新打开。")
-                        .font(.callout).foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                HStack {
-                    Button("打开辅助功能设置") { PermissionManager.openPrivacySettings() }
-                        .controlSize(.small)
-                }
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Label("辅助功能权限", systemImage: "hand.raised")
+                    .font(.headline)
+                Spacer()
+                Circle()
+                    .fill(accessibilityTrusted ? Color.green : Color.orange)
+                    .frame(width: 7, height: 7)
+                Text(accessibilityTrusted ? "已授权" : "未授权")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.secondary)
             }
+
+            Text("用于监听全局鼠标事件并读取其他 App 中的选中文本。")
+                .font(.caption).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            if !accessibilityTrusted {
+                VStack(alignment: .leading, spacing: 4) {
+                    Label("系统设置 → 隐私与安全性 → 辅助功能 → 找到 Smart Mouse → 开启", systemImage: "info.circle")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                .padding(10)
+                .background(Color.orange.opacity(0.06), in: .rect(cornerRadius: 8))
+            }
+
+            HStack(spacing: 8) {
+                Button("刷新状态") { accessibilityTrusted = PermissionManager.isAccessibilityTrusted }
+                    .controlSize(.small)
+                Button("打开系统设置") { PermissionManager.openPrivacySettings() }
+                    .controlSize(.small)
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.white, in: .rect(cornerRadius: 10, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .stroke(.black.opacity(0.05), lineWidth: 1)
         }
     }
 }
+
+// MARK: - Launch at Login
+
+private struct LaunchAtLoginCard: View {
+    @State private var isEnabled = SMAppService.mainApp.status == .enabled
+
+    var body: some View {
+        HStack {
+            Label("开机启动", systemImage: "power")
+                .font(.headline)
+            Text("登录时自动运行")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Spacer()
+            Toggle("", isOn: $isEnabled)
+                .toggleStyle(.switch)
+                .controlSize(.small)
+                .onChange(of: isEnabled) { _, v in
+                    do {
+                        if v { try SMAppService.mainApp.register() }
+                        else { try SMAppService.mainApp.unregister() }
+                    } catch {
+                        isEnabled = SMAppService.mainApp.status == .enabled
+                    }
+                }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.white, in: .rect(cornerRadius: 10, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .stroke(.black.opacity(0.05), lineWidth: 1)
+        }
+        .onAppear { isEnabled = SMAppService.mainApp.status == .enabled }
+    }
+}
+
+// MARK: - Model Card
 
 private struct ModelCard: View {
     @Binding var model: ModelConfiguration
 
     var body: some View {
-        Card {
-            VStack(alignment: .leading, spacing: 14) {
-                CardHeader(icon: "cpu", title: "大模型接口",
-                    subtitle: "兼容 OpenAI chat completions 流式接口。API key 存储于系统钥匙串。")
+        VStack(alignment: .leading, spacing: 12) {
+            Label("大模型接口", systemImage: "cpu")
+                .font(.headline)
 
-                FieldRow("请求地址") {
+            Group {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("请求地址").font(.caption).foregroundStyle(.secondary)
                     TextField("https://api.openai.com/v1/chat/completions", text: $model.endpoint)
                         .textFieldStyle(.roundedBorder)
                 }
-                FieldRow("API key") {
-                    SecureField("sk-...", text: $model.apiKey).textFieldStyle(.roundedBorder)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("API Key").font(.caption).foregroundStyle(.secondary)
+                    SecureField("sk-...", text: $model.apiKey)
+                        .textFieldStyle(.roundedBorder)
                 }
-                FieldRow("模型") {
-                    TextField("gpt-4.1-mini", text: $model.model).textFieldStyle(.roundedBorder)
-                }
-                FieldRow("温度") {
-                    HStack {
-                        Slider(value: $model.temperature, in: 0...1, step: 0.1)
-                        Text(model.temperature, format: .number.precision(.fractionLength(1)))
-                            .monospacedDigit().frame(width: 28, alignment: .trailing)
-                            .foregroundStyle(.secondary)
+                HStack(alignment: .top, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("模型").font(.caption).foregroundStyle(.secondary)
+                        TextField("gpt-4.1-mini", text: $model.model)
+                            .textFieldStyle(.roundedBorder)
+                    }
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("温度").font(.caption).foregroundStyle(.secondary)
+                        HStack(spacing: 8) {
+                            Slider(value: $model.temperature, in: 0...1, step: 0.1)
+                            Text(model.temperature, format: .number.precision(.fractionLength(1)))
+                                .monospacedDigit().foregroundStyle(.secondary)
+                                .frame(width: 24)
+                        }
                     }
                 }
             }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.white, in: .rect(cornerRadius: 10, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .stroke(.black.opacity(0.05), lineWidth: 1)
         }
     }
 }
@@ -163,13 +222,7 @@ private struct ActionsTab: View {
         @Bindable var store = settingsStore
 
         ScrollView {
-            VStack(alignment: .leading, spacing: 12) {
-                if store.settings.actions.isEmpty {
-                    Text("暂无操作，点击下方按钮添加。")
-                        .font(.callout).foregroundStyle(.secondary)
-                        .padding(.vertical, 20).frame(maxWidth: .infinity)
-                }
-
+            VStack(alignment: .leading, spacing: 8) {
                 ForEach(Array(zip(store.settings.actions.indices, store.settings.actions)),
                         id: \.1.id) { index, action in
                     ActionCard(
@@ -178,16 +231,18 @@ private struct ActionsTab: View {
                         canMoveUp: index > 0,
                         canMoveDown: index < store.settings.actions.count - 1,
                         onToggle: {
-                            if expandedIDs.contains(action.id) { expandedIDs.remove(action.id) }
-                            else { expandedIDs.insert(action.id) }
+                            withAnimation(.easeInOut(duration: 0.15)) {
+                                if expandedIDs.contains(action.id) { expandedIDs.remove(action.id) }
+                                else { expandedIDs.insert(action.id) }
+                            }
                         },
                         onMoveUp: {
-                            withAnimation(.easeInOut(duration: 0.18)) {
+                            withAnimation(.easeInOut(duration: 0.15)) {
                                 store.settings.actions.swapAt(index, index - 1)
                             }
                         },
                         onMoveDown: {
-                            withAnimation(.easeInOut(duration: 0.18)) {
+                            withAnimation(.easeInOut(duration: 0.15)) {
                                 store.settings.actions.swapAt(index, index + 1)
                             }
                         }
@@ -198,12 +253,13 @@ private struct ActionsTab: View {
                     let newAction = store.addNewAction()
                     expandedIDs.insert(newAction.id)
                 } label: {
-                    Label("添加操作", systemImage: "plus").frame(maxWidth: .infinity)
+                    Label("添加操作", systemImage: "plus")
+                        .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.bordered).controlSize(.regular).padding(.top, 4)
+                .buttonStyle(.bordered)
+                .padding(.top, 8)
             }
-            .padding(24)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(16)
         }
     }
 }
@@ -221,107 +277,105 @@ private struct ActionCard: View {
     let onMoveDown: () -> Void
 
     var body: some View {
-        Card {
-            VStack(spacing: 0) {
-                // Header row
-                HStack(spacing: 8) {
-                    Image(systemName: action.symbolName)
-                        .foregroundStyle(.blue).frame(width: 22)
-                    Text(action.title)
-                        .font(.callout.weight(.medium)).lineLimit(1).foregroundStyle(.primary)
+        VStack(spacing: 0) {
+            // Header
+            HStack(spacing: 8) {
+                Image(systemName: action.symbolName)
+                    .foregroundStyle(.blue).frame(width: 20)
+                Text(action.title)
+                    .font(.system(size: 13, weight: .medium))
+                    .lineLimit(1)
 
-                    if action.isBuiltIn {
-                        Badge("内置", color: .secondary)
-                    }
-                    if action.isNew {
-                        Badge("未保存", color: .orange)
-                    }
+                if action.isBuiltIn { Badge("内置", color: .secondary) }
+                if action.isNew { Badge("未保存", color: .orange) }
 
-                    Spacer()
+                Spacer()
 
-                    // Sort arrows — available for ALL actions
-                    Button { if canMoveUp { onMoveUp() } } label: {
-                        Image(systemName: "chevron.up")
-                            .font(.system(size: 11, weight: .semibold))
-                            .frame(width: 22, height: 22)
-                    }
-                    .buttonStyle(.plain)
-                    .opacity(canMoveUp ? 0.55 : 0.18)
-
-                    Button { if canMoveDown { onMoveDown() } } label: {
-                        Image(systemName: "chevron.down")
-                            .font(.system(size: 11, weight: .semibold))
-                            .frame(width: 22, height: 22)
-                    }
-                    .buttonStyle(.plain)
-                    .opacity(canMoveDown ? 0.55 : 0.18)
-
-                    // Expand toggle
-                    Button(action: onToggle) {
-                        Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundStyle(.secondary)
-                            .frame(width: 22, height: 22)
-                    }
-                    .buttonStyle(.plain)
-                    .background(.primary.opacity(0.06), in: .circle)
+                Button { if canMoveUp { onMoveUp() } } label: {
+                    Image(systemName: "chevron.up")
+                        .font(.system(size: 10, weight: .bold))
+                        .frame(width: 22, height: 22)
                 }
-                .contentShape(.rect)
-                .onTapGesture { onToggle() }
+                .buttonStyle(.plain)
+                .opacity(canMoveUp ? 0.45 : 0.15)
 
-                // Expanded editor
-                if isExpanded {
-                    Divider().padding(.top, 12)
+                Button { if canMoveDown { onMoveDown() } } label: {
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 10, weight: .bold))
+                        .frame(width: 22, height: 22)
+                }
+                .buttonStyle(.plain)
+                .opacity(canMoveDown ? 0.45 : 0.15)
 
-                    VStack(alignment: .leading, spacing: 12) {
-                        if action.isNew {
-                            NewActionEditor(
-                                title: $action.title,
-                                symbolName: $action.symbolName,
-                                promptTemplate: $action.promptTemplate
-                            )
-                            HStack(spacing: 10) {
+                Button(action: onToggle) {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(.secondary)
+                        .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                        .frame(width: 22, height: 22)
+                }
+                .buttonStyle(.plain)
+                .background(.primary.opacity(0.06), in: .circle)
+            }
+            .contentShape(.rect)
+            .onTapGesture { onToggle() }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+
+            // Expanded
+            if isExpanded {
+                Divider()
+
+                VStack(alignment: .leading, spacing: 12) {
+                    if action.isNew {
+                        NewActionEditor(
+                            title: $action.title,
+                            symbolName: $action.symbolName,
+                            promptTemplate: $action.promptTemplate
+                        )
+                        HStack(spacing: 10) {
+                            Spacer()
+                            Button(role: .cancel) {
+                                onToggle()
+                                settingsStore.cancelNewAction(action)
+                            } label: { Text("取消").frame(width: 50) }
+                                .buttonStyle(.bordered).controlSize(.small)
+                            Button {
+                                settingsStore.saveNewAction(action)
+                                onToggle()
+                            } label: { Text("保存").frame(width: 50) }
+                                .buttonStyle(.borderedProminent).controlSize(.small)
+                                .disabled(action.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .trailing)
+                    } else {
+                        ActionEditorBody(
+                            title: $action.title,
+                            symbolName: $action.symbolName,
+                            promptTemplate: $action.promptTemplate
+                        )
+                        if !action.isBuiltIn {
+                            HStack {
                                 Spacer()
-                                Button(role: .cancel) {
+                                Button(role: .destructive) {
                                     onToggle()
-                                    settingsStore.cancelNewAction(action)
-                                } label: { Text("取消").frame(width: 50) }
-                                    .buttonStyle(.bordered).controlSize(.small)
-                                Button {
-                                    settingsStore.saveNewAction(action)
-                                    onToggle()
-                                } label: { Text("保存").frame(width: 50) }
-                                    .buttonStyle(.borderedProminent).controlSize(.small)
-                                    .disabled(action.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                            }
-                            .frame(maxWidth: .infinity, alignment: .trailing)
-                        } else {
-                            ActionEditorBody(
-                                title: $action.title,
-                                symbolName: $action.symbolName,
-                                promptTemplate: $action.promptTemplate
-                            )
-                            if !action.isBuiltIn {
-                                HStack {
-                                    Spacer()
-                                    Button(role: .destructive) {
-                                        onToggle()
-                                        settingsStore.deleteAction(action)
-                                    } label: { Label("删除", systemImage: "trash") }
-                                        .buttonStyle(.bordered).tint(.red).controlSize(.small)
-                                }
+                                    settingsStore.deleteAction(action)
+                                } label: { Label("删除", systemImage: "trash") }
+                                    .buttonStyle(.bordered).tint(.red).controlSize(.small)
                             }
                         }
                     }
-                    .padding(.top, 14)
-                    .padding(.horizontal, 18)
-                    .padding(.bottom, 14)
-                    .background(
-                        Color(nsColor: .controlBackgroundColor),
-                        in: .rect(cornerRadius: 10, style: .continuous)
-                    )
                 }
+                .padding(16)
+                .background(Color(nsColor: .controlBackgroundColor),
+                            in: .rect(cornerRadius: 10, style: .continuous))
+                .padding(12)
             }
+        }
+        .background(.white, in: .rect(cornerRadius: 10, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .stroke(.black.opacity(0.05), lineWidth: 1)
         }
     }
 }
@@ -335,36 +389,34 @@ private struct ActionEditorBody: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .firstTextBaseline, spacing: 10) {
-                Text("名称").font(.callout).foregroundStyle(.secondary).frame(width: 36, alignment: .leading)
+            HStack(spacing: 10) {
+                Text("名称").font(.caption).foregroundStyle(.secondary).frame(width: 32, alignment: .leading)
                 TextField("操作名称", text: $title).textFieldStyle(.roundedBorder)
             }
-            HStack(alignment: .firstTextBaseline, spacing: 10) {
-                Text("图标").font(.callout).foregroundStyle(.secondary).frame(width: 36, alignment: .leading)
-                HStack(spacing: 6) {
-                    Image(systemName: symbolName).frame(width: 20).foregroundStyle(.secondary)
+            HStack(spacing: 10) {
+                Text("图标").font(.caption).foregroundStyle(.secondary).frame(width: 32, alignment: .leading)
+                HStack(spacing: 4) {
+                    Image(systemName: symbolName).frame(width: 18).foregroundStyle(.secondary)
                     TextField("SF Symbol", text: $symbolName).textFieldStyle(.roundedBorder)
                 }
             }
 
             VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    Text(SmartAction.selectedTextPlaceholder)
-                        .font(.caption2.monospaced()).foregroundStyle(.secondary)
-                        .padding(.horizontal, 6).padding(.vertical, 2)
-                        .background(Color.primary.opacity(0.06), in: .rect(cornerRadius: 4))
-                }
+                Text(SmartAction.selectedTextPlaceholder)
+                    .font(.caption2.monospaced()).foregroundStyle(.secondary)
+                    .padding(.horizontal, 6).padding(.vertical, 2)
+                    .background(.primary.opacity(0.06), in: .rect(cornerRadius: 4))
                 TextEditor(text: $promptTemplate)
                     .font(.system(.body, design: .monospaced))
                     .scrollContentBackground(.hidden)
                     .padding(8)
-                    .frame(minHeight: 110)
-                    .background(Color.primary.opacity(0.04), in: .rect(cornerRadius: 8))
+                    .frame(minHeight: 100)
+                    .background(.primary.opacity(0.04), in: .rect(cornerRadius: 8))
             }
 
             if !promptTemplate.contains(SmartAction.selectedTextPlaceholder) {
                 Text("提示：未包含占位符，选中文本将追加到末尾。")
-                    .font(.callout).foregroundStyle(.secondary)
+                    .font(.caption).foregroundStyle(.secondary)
             }
         }
     }
@@ -379,14 +431,14 @@ private struct NewActionEditor: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .firstTextBaseline, spacing: 10) {
-                Text("名称").font(.callout).foregroundStyle(.secondary).frame(width: 36, alignment: .leading)
+            HStack(spacing: 10) {
+                Text("名称").font(.caption).foregroundStyle(.secondary).frame(width: 32, alignment: .leading)
                 TextField("操作名称", text: $title).textFieldStyle(.roundedBorder)
             }
-            HStack(alignment: .firstTextBaseline, spacing: 10) {
-                Text("图标").font(.callout).foregroundStyle(.secondary).frame(width: 36, alignment: .leading)
-                HStack(spacing: 6) {
-                    Image(systemName: symbolName).frame(width: 20).foregroundStyle(.secondary)
+            HStack(spacing: 10) {
+                Text("图标").font(.caption).foregroundStyle(.secondary).frame(width: 32, alignment: .leading)
+                HStack(spacing: 4) {
+                    Image(systemName: symbolName).frame(width: 18).foregroundStyle(.secondary)
                     TextField("SF Symbol", text: $symbolName).textFieldStyle(.roundedBorder)
                 }
             }
@@ -395,52 +447,19 @@ private struct NewActionEditor: View {
                 Text(SmartAction.selectedTextPlaceholder)
                     .font(.caption2.monospaced()).foregroundStyle(.secondary)
                     .padding(.horizontal, 6).padding(.vertical, 2)
-                    .background(Color.primary.opacity(0.06), in: .rect(cornerRadius: 4))
+                    .background(.primary.opacity(0.06), in: .rect(cornerRadius: 4))
                 TextEditor(text: $promptTemplate)
                     .font(.system(.body, design: .monospaced))
                     .scrollContentBackground(.hidden)
                     .padding(8)
-                    .frame(minHeight: 110)
-                    .background(Color.primary.opacity(0.04), in: .rect(cornerRadius: 8))
+                    .frame(minHeight: 100)
+                    .background(.primary.opacity(0.04), in: .rect(cornerRadius: 8))
             }
         }
     }
 }
 
-// MARK: - Shared Components
-
-private struct Card<Content: View>: View {
-    @ViewBuilder let content: Content
-
-    var body: some View {
-        content
-            .padding(18)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.white, in: .rect(cornerRadius: 12, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .stroke(Color.black.opacity(0.07), lineWidth: 1)
-            }
-    }
-}
-
-private struct CardHeader: View {
-    let icon: String
-    let title: String
-    let subtitle: String
-
-    var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: icon)
-                .font(.system(size: 18, weight: .regular)).foregroundStyle(.blue)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(.headline)
-                Text(subtitle).font(.caption).foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-        }
-    }
-}
+// MARK: - Shared
 
 private struct Badge: View {
     let text: String
@@ -454,28 +473,7 @@ private struct Badge: View {
     var body: some View {
         Text(text)
             .font(.caption2).foregroundStyle(color)
-            .padding(.horizontal, 6).padding(.vertical, 2)
+            .padding(.horizontal, 5).padding(.vertical, 2)
             .background(color.opacity(0.1), in: .capsule)
-    }
-}
-
-private struct FieldRow<Field: View>: View {
-    let label: String
-    @ViewBuilder let field: Field
-
-    init(_ label: String, @ViewBuilder field: () -> Field) {
-        self.label = label
-        self.field = field()
-    }
-
-    var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 12) {
-            Text(label)
-                .font(.callout)
-                .foregroundStyle(.secondary)
-                .frame(width: 64, alignment: .trailing)
-            field
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
     }
 }

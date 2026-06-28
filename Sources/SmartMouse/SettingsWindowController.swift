@@ -18,8 +18,8 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         window.isReleasedWhenClosed = false
         window.level = .normal
         window.backgroundColor = .white
-        window.setContentSize(NSSize(width: 460, height: 580))
-        window.minSize = NSSize(width: 420, height: 460)
+        window.setContentSize(NSSize(width: 420, height: 520))
+        window.minSize = NSSize(width: 380, height: 420)
         window.center()
 
         super.init(window: window)
