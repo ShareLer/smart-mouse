@@ -1,0 +1,95 @@
+import Foundation
+import Observation
+
+@Observable
+final class SettingsStore {
+    private let storageKey = "smartMouse.settings.v1"
+
+    var settings: AppSettings {
+        didSet { save() }
+    }
+
+    init() {
+        var decoded: AppSettings?
+        if
+            let data = UserDefaults.standard.data(forKey: storageKey),
+            let settings = try? JSONDecoder().decode(AppSettings.self, from: data)
+        {
+            decoded = settings
+        }
+
+        if let keychainKey = KeychainManager.load() {
+            if var settings = decoded {
+                settings.model.apiKey = keychainKey
+                decoded = settings
+            }
+        }
+
+        settings = decoded ?? .defaults
+    }
+
+    func resetBuiltInActions() {
+        let customActions = settings.actions.filter { !$0.isBuiltIn }
+        settings.actions = AppSettings.defaults.actions + customActions
+    }
+
+    func addNewAction() -> SmartAction {
+        let action = SmartAction(
+            id: UUID(),
+            title: "新操作",
+            symbolName: "sparkles",
+            promptTemplate: "请基于下面选中的内容回答：\n\n{{selected_text}}",
+            isBuiltIn: false,
+            isNew: true
+        )
+        settings.actions.append(action)
+        return action
+    }
+
+    func saveNewAction(_ action: SmartAction) {
+        guard let index = settings.actions.firstIndex(where: { $0.id == action.id }) else { return }
+        var saved = action
+        saved.isNew = false
+        settings.actions[index] = saved
+    }
+
+    func cancelNewAction(_ action: SmartAction) {
+        settings.actions.removeAll { $0.id == action.id && $0.isNew }
+    }
+
+    func deleteAction(_ action: SmartAction) {
+        guard !action.isBuiltIn else { return }
+        settings.actions.removeAll { $0.id == action.id }
+    }
+
+    func deleteActions(at offsets: IndexSet) {
+        let removable = offsets.filter {
+            settings.actions.indices.contains($0) && !settings.actions[$0].isBuiltIn
+        }
+        settings.actions.remove(atOffsets: IndexSet(removable))
+    }
+
+    func moveActions(from source: IndexSet, to destination: Int) {
+        settings.actions.move(fromOffsets: source, toOffset: destination)
+    }
+
+    private func save() {
+        let key = settings.model.apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        if key.isEmpty {
+            KeychainManager.delete()
+        } else {
+            KeychainManager.save(apiKey: key)
+        }
+
+        var settingsForDisk = settings
+        settingsForDisk.model.apiKey = ""
+        // Strip isNew flag before persisting
+        settingsForDisk.actions = settingsForDisk.actions.map { action in
+            var a = action
+            a.isNew = false
+            return a
+        }
+        guard let data = try? JSONEncoder().encode(settingsForDisk) else { return }
+        UserDefaults.standard.set(data, forKey: storageKey)
+    }
+}
